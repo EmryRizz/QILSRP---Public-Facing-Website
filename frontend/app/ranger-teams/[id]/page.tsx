@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { API_BASE_URL } from "../../utils/api";
 
 type RangerTeam = {
   id: string;
@@ -15,7 +16,7 @@ type RangerTeam = {
 };
 
 async function getRangerTeam(id: string): Promise<RangerTeam | null> {
-  const res = await fetch(`http://localhost:5000/ranger-teams/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/ranger-teams/${id}`, {
     cache: "no-store",
   });
 

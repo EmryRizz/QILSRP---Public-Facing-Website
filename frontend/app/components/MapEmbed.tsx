@@ -4,7 +4,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
-import { Loader } from '@googlemaps/js-api-loader'
 import Link from "next/link";
 
 
@@ -58,7 +57,7 @@ const visibleItems = (filter === "all"
       v: "weekly",
     });
 
-    const [{ Map, InfoWindow }, { AdvancedMarkerElement }] =
+    const [{ Map}] =
       await Promise.all([
         importLibrary("maps"),
         importLibrary("marker"),
@@ -97,15 +96,30 @@ const visibleItems = (filter === "all"
         const allItems: MapItem[] = []
 
         // Opportunities (green triangles)
+        type OpportunityItem = {
+          id: string;
+          title: string;
+          location?: string;
+          description?: string;
+          region?: string;
+          coordinates?: {
+            lat?: number;
+            lng?: number;
+          };
+        };
+
         if (oppsData.success && oppsData.data) {
-          oppsData.data.forEach((opp: any) => {
+          oppsData.data.forEach((opp: OpportunityItem) => {
             if (opp.coordinates?.lat && opp.coordinates?.lng) {
               allItems.push({
                 id: opp.id,
                 type: 'opportunity',
                 title: opp.title,
-                location: opp.location,
-                coordinates: opp.coordinates,
+                location: opp.location || "-",
+                coordinates: {
+                    lat: opp.coordinates.lat!,
+                    lng: opp.coordinates.lng!,
+                  },
                 description: opp.description,
                 region: opp.region
               })
@@ -114,15 +128,30 @@ const visibleItems = (filter === "all"
         }
 
         // Events (blue circles)
+        type EventItemData = {
+          id: string;
+          title: string;
+          location?: string;
+          description?: string;
+          region?: string;
+          coordinates?: {
+            lat?: number;
+            lng?: number;
+          };
+        };
+
         if (eventsData.success && eventsData.data) {
-          eventsData.data.forEach((evt: any) => {
+          eventsData.data.forEach((evt: EventItemData) => {
             if (evt.coordinates?.lat && evt.coordinates?.lng) {
               allItems.push({
                 id: evt.id,
                 type: 'event',
                 title: evt.title,
-                location: evt.location,
-                coordinates: evt.coordinates,
+                location: evt.location || "-",
+                coordinates: {
+                    lat: evt.coordinates.lat!,
+                    lng: evt.coordinates.lng!,
+                  },
                 description: evt.description,
                 region: evt.region
               })
@@ -131,15 +160,29 @@ const visibleItems = (filter === "all"
         }
 
         // Ranger Teams (brown squares)
+        type RangerTeamItem = {
+          id: string;
+          name: string;
+          location?: string;
+          region?: string;
+          coordinates?: {
+            lat?: number;
+            lng?: number;
+          };
+        };
+        
         if (teamsData.success && teamsData.data) {
-          teamsData.data.forEach((team: any) => {
+          teamsData.data.forEach((team: RangerTeamItem) => {
             if (team.coordinates?.lat && team.coordinates?.lng) {
               allItems.push({
                 id: team.id,
                 type: 'rangerTeam',
                 title: team.name,
-                location: team.location,
-                coordinates: team.coordinates,
+                location: team.location || "-",
+                coordinates: {
+                    lat: team.coordinates.lat!,
+                    lng: team.coordinates.lng!,
+                  },
                 region: team.region
               })
             }
@@ -199,6 +242,7 @@ const visibleItems = (filter === "all"
       newMarkers.push(marker)
     })
 
+ // eslint-disable-next-line react-hooks/set-state-in-effect
     setMarkers(newMarkers)
 
     // Auto-fit map to show all markers

@@ -2,51 +2,40 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../utils/api";
+import {
+  formatDate,
+  isClosingSoon,
+  getDate,
+} from "../utils/date";
 
 type EventItem = {
   id: string;
   title?: string;
   description?: string;
-  eventDate?: any;
-  closingDate?: any;
-  startDate?: any;
-  endDate?: any;
+  eventDate?: FirestoreTimestamp;
+  closingDate?: FirestoreTimestamp;
+  startDate?: FirestoreTimestamp;
+  endDate?: FirestoreTimestamp;
   location?: string;
   region?: string;
 };
 
+type FirestoreTimestamp = {
+  seconds?: number;
+  _seconds?: number;
+};
+
 async function getEvents(): Promise<EventItem[]> {
-  const res = await fetch("http://localhost:5000/events");
+  const res = await fetch(`${API_BASE_URL}/events`);
   const result = await res.json();
   return result.data || [];
-}
-
-function formatDate(timestamp: any) {
-  if (!timestamp) return "TBC";
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return timestamp;
-
-  return new Date(seconds * 1000).toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function truncateWords(text = "", maxWords = 25) {
   const words = text.split(" ");
   if (words.length <= maxWords) return text;
   return words.slice(0, maxWords).join(" ") + "...";
-}
-
-function formatDateForInput(timestamp: any) {
-  if (!timestamp) return "";
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return "";
-
-  return new Date(seconds * 1000).toISOString().split("T")[0];
 }
 
 function getEventDateText(eventItem: EventItem) {
@@ -61,29 +50,12 @@ function getEventDateText(eventItem: EventItem) {
   return start;
 }
 
-function isClosingSoon(timestamp: any) {
-  if (!timestamp) return false;
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return false;
-
-  const closingDate = new Date(seconds * 1000);
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
-
-  const twoWeeks = new Date(today);
-  twoWeeks.setDate(today.getDate() + 14);
-
-  return closingDate >= today && closingDate <= twoWeeks;
-}
-
 export default function EventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+
 
   const itemsPerPage = 10;
 
@@ -96,9 +68,11 @@ export default function EventsPage() {
     fetchEvents();
   }, []);
 
+ 
   useEffect(() => {
+     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
-  }, [search, regionFilter, dateFilter]);
+  }, [search, regionFilter]);
 
   const regionOptions = Array.from(
     new Set(events.map((item) => item.region).filter(Boolean))
@@ -116,11 +90,7 @@ export default function EventsPage() {
       ? event.region === regionFilter
       : true;
 
-    const matchesDate = dateFilter
-    ? formatDateForInput(event.eventDate) === dateFilter
-    : true;
-
-    return matchesSearch && matchesRegion && matchesDate;
+    return matchesSearch && matchesRegion;
   });
 
   const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);

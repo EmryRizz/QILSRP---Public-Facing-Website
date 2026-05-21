@@ -1,5 +1,12 @@
 import Link from "next/link";
 import MapEmbed from './components/MapEmbed'
+import { API_BASE_URL } from "./utils/api";
+import {
+  formatDate,
+  isClosingSoon,
+  getDate,
+  isClosingWithinSevenDays,
+} from "./utils/date";
 
 type Opportunity = {
   id: string;
@@ -8,50 +15,40 @@ type Opportunity = {
   type?: string;
   status?: string;
   location?: string;
-  closingDate?: any;
+  closingDate?: FirestoreTimestamp;
 };
 
 type EventItem = {
   id: string;
   title?: string;
   description?: string;
-  eventDate?: any;
-  closingDate?: any;
+  closingDate?: FirestoreTimestamp;
+  eventDate?: FirestoreTimestamp;
   location?: string;
 };
 
 async function getOpportunities(): Promise<Opportunity[]> {
-  const res = await fetch("http://localhost:5000/opportunities", {
+  const res = await fetch(`${API_BASE_URL}/opportunities`, {
     cache: "no-store",
   });
+
   const result = await res.json();
   return result.data || [];
 }
 
 async function getEvents(): Promise<EventItem[]> {
-  const res = await fetch("http://localhost:5000/events", {
+  const res = await fetch(`${API_BASE_URL}/events`, {
     cache: "no-store",
   });
+
   const result = await res.json();
   return result.data || [];
 }
 
-function getDate(timestamp: any) {
-  const seconds = timestamp?.seconds || timestamp?._seconds;
-  if (!seconds) return null;
-  return new Date(seconds * 1000);
-}
-
-function formatDate(timestamp: any) {
-  const date = getDate(timestamp);
-  if (!date) return "TBC";
-
-  return date.toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
+type FirestoreTimestamp = {
+  seconds?: number;
+  _seconds?: number;
+};
 
 function truncateWords(text = "", maxWords = 25) {
   const words = text.split(" ");
@@ -59,35 +56,7 @@ function truncateWords(text = "", maxWords = 25) {
   return words.slice(0, maxWords).join(" ") + "...";
 }
 
-function isClosingWithinSevenDays(timestamp: any) {
-  const closingDate = getDate(timestamp);
-  if (!closingDate) return false;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const sevenDaysFromToday = new Date(today);
-  sevenDaysFromToday.setDate(today.getDate() + 14);
-
-  return closingDate >= today && closingDate <= sevenDaysFromToday;
-}
-
-function isClosingSoon(timestamp: any) {
-  if (!timestamp) return false;
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return false;
-
-  const closingDate = new Date(seconds * 1000);
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
-
-  const twoWeeks = new Date(today);
-  twoWeeks.setDate(today.getDate() + 14);
-
-  return closingDate >= today && closingDate <= twoWeeks;
-}
 
 export default async function Home() {
   const opportunities = await getOpportunities();

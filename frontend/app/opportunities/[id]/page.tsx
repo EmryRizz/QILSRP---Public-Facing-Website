@@ -1,4 +1,9 @@
 import Link from "next/link";
+import { API_BASE_URL } from "../../utils/api";
+import {
+  formatDate,
+  getDate,
+} from "../../utils/date";
 
 type Opportunity = {
   id: string;
@@ -8,7 +13,7 @@ type Opportunity = {
   status?: string;
   location?: string;
   region?: string;
-  closingDate?: any;
+  closingDate?: FirestoreTimestamp;
   minsalary?: number;
   maxsalary?: number;
   contactName?: string;
@@ -16,8 +21,13 @@ type Opportunity = {
   contactPhone?: string;
 };
 
+type FirestoreTimestamp = {
+  seconds?: number;
+  _seconds?: number;
+};
+
 async function getOpportunity(id: string): Promise<Opportunity | null> {
-  const res = await fetch(`http://localhost:5000/opportunities/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/opportunities/${id}`,{
     cache: "no-store",
   });
 
@@ -25,19 +35,6 @@ async function getOpportunity(id: string): Promise<Opportunity | null> {
 
   const result = await res.json();
   return result.data;
-}
-
-function formatDate(timestamp: any) {
-  if (!timestamp) return "TBC";
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return timestamp;
-
-  return new Date(seconds * 1000).toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function formatSalary(min?: number, max?: number) {

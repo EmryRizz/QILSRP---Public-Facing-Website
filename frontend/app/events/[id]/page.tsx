@@ -3,17 +3,27 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { API_BASE_URL } from "../../utils/api";
+import {
+  formatDate,
+  getDate,
+} from "../../utils/date";
 
 type EventItem = {
   id: string;
   title?: string;
   description?: string;
-  eventDate?: any;
-  closingDate?: any;
-  startDate?: any;
-  endDate?: any;
+  eventDate?: FirestoreTimestamp;
+  closingDate?: FirestoreTimestamp;
+  startDate?: FirestoreTimestamp;
+  endDate?: FirestoreTimestamp;
   location?: string;
   region?: string;
+};
+
+type FirestoreTimestamp = {
+  seconds?: number;
+  _seconds?: number;
 };
 
 type RangerTeam = {
@@ -22,25 +32,11 @@ type RangerTeam = {
 };
 
 async function getEvent(id: string): Promise<EventItem | null> {
-  const res = await fetch(`http://localhost:5000/events/${id}`);
-
+ const res = await fetch(`${API_BASE_URL}/events/${id}`);
   if (!res.ok) return null;
 
   const result = await res.json();
   return result.data;
-}
-
-function formatDate(timestamp: any) {
-  if (!timestamp) return "TBC";
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return timestamp;
-
-  return new Date(seconds * 1000).toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function getEventDateRange(event: EventItem) {
@@ -74,7 +70,7 @@ export default function EventDetailPage() {
     }
 
     async function fetchRangerTeams() {
-        const res = await fetch("http://localhost:5000/ranger-teams");
+        const res = await fetch(`${API_BASE_URL}/ranger-teams`);
         const result = await res.json();
         setRangerTeams(result.data || []);
     }
@@ -101,7 +97,7 @@ fetchRangerTeams();
 
     
 
-    const res = await fetch(`http://localhost:5000/events/${id}/participants`, {
+    const res = await fetch(`${API_BASE_URL}/events/${id}/participants`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

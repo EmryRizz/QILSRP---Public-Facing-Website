@@ -4,9 +4,15 @@ import db from "../db/firebase";
 const router = Router();
 const today = new Date();
 today.setHours(0, 0, 0, 0);
+const getBrisbaneDateString = (date: Date) =>
+  date.toLocaleDateString("en-CA", {
+    timeZone: "Australia/Brisbane",
+  });
 
 router.get("/opportunities", async (req, res) => {
   try {
+    const todayString = getBrisbaneDateString(new Date());
+
     const snapshot = await db
       .collection("opportunities")
       .where("status", "==", "Approved")
@@ -27,16 +33,15 @@ router.get("/opportunities", async (req, res) => {
           closingDate: data.opportunitiesclosingdate,
           coordinates: data.coordinates,
         };
-        
       })
-        .filter((item) => {
+      .filter((item) => {
         const seconds = item.closingDate?.seconds || item.closingDate?._seconds;
         if (!seconds) return false;
 
         const closingDate = new Date(seconds * 1000);
-        closingDate.setHours(0, 0, 0, 0);
+        const closingDateString = getBrisbaneDateString(closingDate);
 
-        return closingDate >= today;
+        return closingDateString >= todayString;
       })
       .sort((a, b) => {
         const aSec = a.closingDate?.seconds || a.closingDate?._seconds || 0;

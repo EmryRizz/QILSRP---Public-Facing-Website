@@ -2,6 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../utils/api";
+import {
+  formatDate,
+  isClosingSoon,
+  getDate,
+} from "../utils/date";
+
 
 type Opportunity = {
   id: string;
@@ -11,11 +18,16 @@ type Opportunity = {
   status?: string;
   location?: string;
   region?: string;
-  closingDate?: any;
+  closingDate?: FirestoreTimestamp;
+};
+
+type FirestoreTimestamp = {
+  seconds?: number;
+  _seconds?: number;
 };
 
 async function getOpportunities(): Promise<Opportunity[]> {
-  const res = await fetch("http://localhost:5000/opportunities");
+  const res = await fetch(`${API_BASE_URL}/opportunities`);
   const result = await res.json();
   return result.data || [];
 }
@@ -24,36 +36,6 @@ function truncateWords(text = "", maxWords = 25) {
   const words = text.split(" ");
   if (words.length <= maxWords) return text;
   return words.slice(0, maxWords).join(" ") + "...";
-}
-
-function formatDate(timestamp: any) {
-  if (!timestamp) return "TBC";
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return timestamp;
-
-  return new Date(seconds * 1000).toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function isClosingSoon(timestamp: any) {
-  if (!timestamp) return false;
-
-  const seconds = timestamp.seconds || timestamp._seconds;
-  if (!seconds) return false;
-
-  const closingDate = new Date(seconds * 1000);
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
-
-  const twoWeeks = new Date(today);
-  twoWeeks.setDate(today.getDate() + 14);
-
-  return closingDate >= today && closingDate <= twoWeeks;
 }
 
 export default function OpportunitiesPage() {
@@ -100,7 +82,9 @@ export default function OpportunitiesPage() {
   currentPage * itemsPerPage
 );
 
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   setCurrentPage(1);
   }, [search, typeFilter, regionFilter]);
 
